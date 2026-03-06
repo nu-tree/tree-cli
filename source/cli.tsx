@@ -22,13 +22,19 @@ import App from './app.js';
 const cli = meow(
 	`
 	Usage
-	  $ tree-cli --add sidebar
+	  $ npx @knui9910/tree-cli --add <component>
+
+	Available Components
+	  tiptap  Rich text editor built on ProseMirror
+	          - Headless & fully customizable
+	          - Supports Markdown shortcuts, tables, images, and more
+	          - React-compatible with extensive extension ecosystem
 
 	Options
-	  --add  추가할 컴포넌트 이름
+	  --add  컴포넌트 이름을 지정해 설치합니다
 
 	Examples
-	  $ tree-cli --add sidebar
+	  $ npx @knui9910/tree-cli --add tiptap
 `,
 	{
 		// ES 모듈에서 import.meta를 통해 package.json 정보 전달
