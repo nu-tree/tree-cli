@@ -1,23 +1,65 @@
 /* tiptap-editor.module.css */
+
+/* ProseMirror 에디터의 텍스트 자동 줄바꿈 설정 */
+.tiptapGlobalStyles :global(.ProseMirror) {
+	overflow-wrap: break-word !important;
+	word-break: break-word !important;
+	white-space: pre-wrap !important;
+	overflow-x: hidden !important;
+}
+
+/* 모든 요소에 강제로 줄바꿈 적용 - inline 스타일도 무시 */
+.tiptapGlobalStyles :global(.ProseMirror *) {
+	overflow-wrap: break-word !important;
+	word-break: break-word !important;
+	white-space: normal !important;
+	max-width: 100% !important;
+}
+
+/* 이미지 NodeView wrapper/container는 max-width 강제 해제 */
+.tiptapGlobalStyles :global(.ProseMirror div[style*="inline-block"]),
+.tiptapGlobalStyles :global(.ProseMirror span[style*="inline-block"]) {
+	max-width: none !important;
+}
+
+/* 블록 요소들은 pre-wrap 유지 */
+.tiptapGlobalStyles :global(.ProseMirror p),
+.tiptapGlobalStyles :global(.ProseMirror h1),
+.tiptapGlobalStyles :global(.ProseMirror h2),
+.tiptapGlobalStyles :global(.ProseMirror h3),
+.tiptapGlobalStyles :global(.ProseMirror h4),
+.tiptapGlobalStyles :global(.ProseMirror h5),
+.tiptapGlobalStyles :global(.ProseMirror h6),
+.tiptapGlobalStyles :global(.ProseMirror div),
+.tiptapGlobalStyles :global(.ProseMirror li) {
+	white-space: pre-wrap !important;
+	overflow-wrap: break-word !important;
+	word-break: break-word !important;
+}
+
 .tiptapGlobalStyles :global(.ProseMirror td.selectedCell),
 .tiptapGlobalStyles :global(.ProseMirror th.selectedCell) {
 	position: relative;
+	box-shadow: inset 0 0 0 2px #3b82f6;
 }
+
 .tiptapGlobalStyles :global(.ProseMirror td.selectedCell::after),
 .tiptapGlobalStyles :global(.ProseMirror th.selectedCell::after) {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background: #dbeafe99;
+	background: rgba(59, 130, 246, 0.18);
 	pointer-events: none;
 	z-index: 20;
 }
+
 .tiptapGlobalStyles :global(.ProseMirror table) {
 	display: block;
 	width: 100%;
 	max-width: 100%;
 	overflow-x: auto;
 }
+
 .tiptapGlobalStyles :global(.ProseMirror th),
 .tiptapGlobalStyles :global(.ProseMirror td) {
 	border: 1px solid #d1d5db;
@@ -25,8 +67,25 @@
 	padding: 0.25rem 0.5rem;
 	word-break: break-all;
 }
+
 .tiptapGlobalStyles :global(.ProseMirror th) {
-	background: #f3f4f6;
+	background-color: #f3f4f6;
 	color: #111827;
 	font-weight: 600;
+}
+
+@media (max-width: 640px) {
+	.tiptapGlobalStyles :global(.ProseMirror) {
+		font-size: 0.9375rem;
+		line-height: 1.6;
+	}
+
+	.tiptapGlobalStyles :global(.ProseMirror table) {
+		font-size: 0.875rem;
+	}
+
+	.tiptapGlobalStyles :global(.ProseMirror img) {
+		max-width: 100%;
+		height: auto;
+	}
 }

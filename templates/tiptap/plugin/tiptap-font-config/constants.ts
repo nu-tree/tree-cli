@@ -77,10 +77,15 @@ export enum Pxs {
   PX_9 = '9px',
   PX_12 = '12px',
   PX_15 = '15px',
+  PX_16 = '16px',
   PX_18 = '18px',
+  PX_19 = '19px',
   PX_21 = '21px',
   PX_24 = '24px',
+  PX_25 = '25px',
+  PX_26 = '26px',
   PX_27 = '27px',
+  PX_28 = '28px',
   PX_30 = '30px',
   PX_33 = '33px',
   PX_36 = '36px',
@@ -104,4 +109,14 @@ export enum Pxs {
   PX_90 = '90px',
   PX_93 = '93px',
   PX_96 = '96px',
+}
+
+export enum LineHeights {
+  LH_1_0 = '1.0',
+  LH_1_15 = '1.15',
+  LH_1_2 = '1.2',
+  LH_1_3 = '1.3',
+  LH_1_5 = '1.5',
+  LH_1_75 = '1.75',
+  LH_2_0 = '2.0',
 }

@@ -5,27 +5,61 @@ import StarterKit from '@tiptap/starter-kit';
 import Color from '@tiptap/extension-color';
 import Underline from '@tiptap/extension-underline';
 import FontFamily from '@tiptap/extension-font-family';
-import TextStyle from '@tiptap/extension-text-style';
+import { TextStyle } from '@tiptap/extension-text-style';
 import Link from '@tiptap/extension-link';
 import FontSize from 'tiptap-extension-font-size';
 import { CustomImage, YouTubeVideo } from '../extended';
 import Highlight from '@tiptap/extension-highlight';
 import TextAlign from '@tiptap/extension-text-align';
-import Table from '@tiptap/extension-table';
+import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
-import { useEffect, useRef, useMemo } from 'react';
+
+const CustomTableCell = TableCell.extend({
+  addAttributes() {
+    return {
+      ...(this as any).parent?.(),
+      backgroundColor: {
+        default: null,
+        parseHTML: (element) => element.style.backgroundColor || null,
+        renderHTML: (attributes) => {
+          if (!attributes.backgroundColor) return {};
+          return { style: `background-color: ${attributes.backgroundColor}` };
+        },
+      },
+    };
+  },
+});
+
+const CustomTableHeader = TableHeader.extend({
+  addAttributes() {
+    return {
+      ...(this as any).parent?.(),
+      backgroundColor: {
+        default: null,
+        parseHTML: (element) => element.style.backgroundColor || null,
+        renderHTML: (attributes) => {
+          if (!attributes.backgroundColor) return {};
+          return { style: `background-color: ${attributes.backgroundColor}` };
+        },
+      },
+    };
+  },
+});
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useContentStore, useContentStoreSelector } from '@/components/custom-ui/tiptap/plugin';
 import { cn } from '@/lib/utils';
 import { Toolbar } from './toolbar';
 import { ScrollArea } from '../../scroll-area/scroll-area';
 import { TableContextMenu } from '../menus/table-context-menu';
 import { FontOptions } from '../plugin/tiptap-font-config/constants';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type Props = React.HTMLAttributes<HTMLElement> & {
   keyId: string;
   height?: number;
+  width?: number | string;
   onImageUpload?: (file: File) => Promise<string>;
   onChange?: (content: string) => void;
   content?: string;
@@ -35,10 +69,12 @@ export const TiptapEditor = ({
   className,
   keyId,
   height = 400,
+  width = '100%',
   content: initialContentProp,
   onImageUpload,
   onChange,
 }: Props) => {
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const { getContent, setContent } = useContentStore();
   // 특정 키만 구독하여 불필요한 리렌더링 방지
   const { content: storedContent } = useContentStoreSelector(keyId);
@@ -49,11 +85,14 @@ export const TiptapEditor = ({
     extensions: [
       Color,
       Highlight.configure({ multicolor: true }),
-      StarterKit,
+      StarterKit.configure({
+        // StarterKit에 포함된 extension 중 중복 방지를 위해 제외
+        // Link와 Underline은 별도로 추가하므로 제외
+      }),
       Underline,
       FontFamily,
       TextStyle,
-      FontSize,
+      FontSize as any,
       CustomImage,
       YouTubeVideo,
       TextAlign.configure({
@@ -71,8 +110,8 @@ export const TiptapEditor = ({
         resizable: true,
       }),
       TableRow,
-      TableHeader,
-      TableCell,
+      CustomTableHeader,
+      CustomTableCell,
     ],
     content: initialContent,
     editorProps: {
@@ -85,7 +124,9 @@ export const TiptapEditor = ({
     shouldRerenderOnTransaction: false,
     onCreate: ({ editor }) => {
       // 에디터 생성 시 기본 폰트 크기와 폰트 설정
-      editor.chain().selectAll().setFontSize('18px').setFontFamily(FontOptions['맑은 고딕']).run();
+      if (!initialContent) {
+        editor.chain().selectAll().setFontSize('18px').setFontFamily(FontOptions['맑은 고딕']).run();
+      }
       editor.commands.blur();
     },
     onUpdate: ({ editor }) => {
@@ -96,41 +137,151 @@ export const TiptapEditor = ({
   });
 
   const didSetInitialContent = useRef(false);
-
-  // 메모화된 초기 콘텐츠 설정 로직
-  const shouldSetInitialContent = useMemo(() => {
-    return initialContentProp !== undefined && !didSetInitialContent.current;
-  }, [initialContentProp]);
+  const isMobile = useIsMobile(641);
 
   useEffect(() => {
     if (!editor) return;
 
     // 초기값 설정 (최초 1회)
-    if (shouldSetInitialContent) {
-      editor.commands.setContent(initialContentProp!);
-      setContent(keyId, initialContentProp!);
-      didSetInitialContent.current = true;
+    if (initialContentProp === undefined) {
+      return;
     }
-  }, [editor, shouldSetInitialContent, initialContentProp, keyId, setContent]);
+
+    if (didSetInitialContent.current && editor.getHTML() === initialContentProp) {
+      return;
+    }
+    editor.commands.setContent(initialContentProp);
+    setContent(keyId, initialContentProp);
+    didSetInitialContent.current = true;
+  }, [editor, initialContentProp, keyId, setContent]);
+
+  const resolvedHeight = typeof height === 'number' && height > 0 ? height : 400;
+  const responsiveHeight = isMobile ? Math.min(resolvedHeight, 500) : resolvedHeight;
+
+
+  const editorContentStyle = isMobile
+    ? { minHeight: `${responsiveHeight}px`, maxHeight: `${resolvedHeight}px` }
+    : { height: `${resolvedHeight}px` };
+
+  // 모바일에서 에디터 빈 영역 터치 시 포커스 활성화
+  const handleEditorAreaClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!editor || editor.isFocused) return;
+      const target = e.target as HTMLElement;
+      if (target.closest('.ProseMirror')) return;
+      editor.commands.focus('end');
+    },
+    [editor],
+  );
+
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    const hasFiles = Array.from(e.dataTransfer.items).some((item) => item.kind === 'file' && item.type.startsWith('image/'));
+    if (!hasFiles) return;
+    e.preventDefault();
+    setIsDraggingOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setIsDraggingOver(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDraggingOver(false);
+      if (!editor) return;
+
+      const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith('image/'));
+      if (!files.length) return;
+
+      for (const file of files) {
+        if (onImageUpload) {
+          const url = await onImageUpload(file);
+          if (url) editor.chain().focus().setImage({ src: url }).enter().run();
+        } else {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = reader.result as string;
+            editor.chain().focus().setImage({ src: base64 }).enter().run();
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    },
+    [editor, onImageUpload],
+  );
 
   if (!editor) return null;
 
-  return (
-    <div className={`${cn('border rounded-xl relative', className)}`}>
-      <Toolbar editor={editor} onImageUpload={onImageUpload} />
-      <ScrollArea style={{ height: `${height}px` }}>
-        <EditorContent
-          editor={editor}
-          className={cn(
-            'p-6 border-none [&>.tiptap]:!outline-none',
-            '[&_.resize-cursor]:cursor-col-resize',
-            styles.tiptapGlobalStyles,
-            className
-          )}
-          style={{ height: `${height}px` }}
-        />
-        <TableContextMenu editor={editor} />
-      </ScrollArea>
+  const fullscreenContentStyle = isFullscreen
+    ? { flex: 1, minHeight: 0 }
+    : editorContentStyle;
+
+  const editorContent = (
+    <div
+      onClick={handleEditorAreaClick}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={cn('relative cursor-text', isFullscreen ? 'min-h-0 flex-1 overflow-y-auto' : '')}
+      style={isFullscreen ? undefined : editorContentStyle}
+    >
+      {isDraggingOver && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center rounded bg-blue-50/80 ring-2 ring-inset ring-blue-400">
+          <span className="rounded-md bg-blue-100 px-4 py-2 text-sm font-medium text-blue-700">이미지를 놓으세요</span>
+        </div>
+      )}
+      <EditorContent
+        editor={editor}
+        className={cn(
+          'w-full border-none [&>.tiptap]:!outline-none [&_.resize-cursor]:cursor-col-resize',
+          isFullscreen ? 'min-h-full p-8' : 'h-full p-6 max-sm:p-4',
+          styles.tiptapGlobalStyles,
+        )}
+      />
     </div>
+  );
+
+  return (
+    <>
+      {/* 전체보기 오버레이 */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-[100] flex flex-col bg-white">
+          <div className="w-full overflow-hidden border-b">
+            <Toolbar
+              editor={editor}
+              onImageUpload={onImageUpload}
+              isFullscreen={isFullscreen}
+              onToggleFullscreen={() => setIsFullscreen(false)}
+            />
+          </div>
+          {editorContent}
+          <TableContextMenu editor={editor} />
+        </div>
+      )}
+
+      {/* 일반 에디터 */}
+      <div
+        className={cn(
+          'relative w-full max-w-full overflow-hidden rounded-xl border',
+          'max-sm:rounded-lg max-sm:shadow-none',
+          className,
+        )}
+      >
+        <div className="w-full overflow-hidden">
+          <Toolbar
+            editor={editor}
+            onImageUpload={onImageUpload}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={() => setIsFullscreen(true)}
+          />
+        </div>
+        {!isFullscreen && editorContent}
+        <TableContextMenu editor={editor} />
+      </div>
+    </>
   );
 };
