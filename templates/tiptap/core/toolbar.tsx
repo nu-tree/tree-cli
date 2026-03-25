@@ -16,6 +16,8 @@ import { TextAlignCenter } from '../menus/text-align-center';
 import { TextAlignRight } from '../menus/text-align-right';
 import { Img } from '../menus/img';
 import { Table } from '../menus/table';
+import { BulletList } from '../menus/bullet-list';
+import { OrderedList } from '../menus/ordered-list';
 import { Editor } from '@tiptap/core';
 import {
 	ChevronDown,
@@ -171,6 +173,8 @@ export const Toolbar = ({
 						<Italic editor={editor} />
 						<UnderLine editor={editor} />
 						<Strike editor={editor} />
+						<BulletList editor={editor} />
+						<OrderedList editor={editor} />
 					</>
 				)}
 				{groupName === 'align' && (
@@ -268,6 +272,9 @@ export const Toolbar = ({
 						<UnderLine editor={editor} />
 						<Strike editor={editor} />
 						<UrlLink editor={editor} />
+						<Separator />
+						<BulletList editor={editor} />
+						<OrderedList editor={editor} />
 						<Separator />
 						<Table editor={editor} />
 						<Separator />

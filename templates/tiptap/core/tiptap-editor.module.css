@@ -37,6 +37,27 @@
 	word-break: break-word !important;
 }
 
+/* 단락 간 기본 margin 제거 - 줄간격은 line-height로 제어 */
+.tiptapGlobalStyles :global(.ProseMirror p) {
+	margin: 0 !important;
+}
+
+.tiptapGlobalStyles :global(.ProseMirror ul) {
+	list-style-type: disc !important;
+	padding-left: 1.5rem !important;
+	margin: 0.25rem 0 !important;
+}
+
+.tiptapGlobalStyles :global(.ProseMirror ol) {
+	list-style-type: decimal !important;
+	padding-left: 1.5rem !important;
+	margin: 0.25rem 0 !important;
+}
+
+.tiptapGlobalStyles :global(.ProseMirror li) {
+	display: list-item !important;
+}
+
 .tiptapGlobalStyles :global(.ProseMirror td.selectedCell),
 .tiptapGlobalStyles :global(.ProseMirror th.selectedCell) {
 	position: relative;
