@@ -68,7 +68,7 @@ export const TiptapViewer = ({ className, keyId, content: propsContent, ref, ...
     onCreate: ({ editor }) => {
       // 에디터 생성 시 기본 폰트 크기와 폰트 설정 (내용이 없을 때만)
       if (!finalContent) {
-        editor.chain().selectAll().setFontSize('18px').setFontFamily(FontOptions['맑은 고딕']).run();
+        editor.chain().selectAll().setFontSize('18px').setFontFamily(FontOptions['맑은고딕']).run();
       }
     },
   });

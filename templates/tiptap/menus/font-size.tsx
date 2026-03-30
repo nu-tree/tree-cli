@@ -9,24 +9,26 @@ import { useCallback, useEffect, useState } from 'react';
 
 type Props = React.HTMLAttributes<HTMLElement> & {
   editor: Editor;
+  defaultFontSize?: Pxs;
 };
 
-export const TipTapFontSize = ({ className, editor }: Readonly<Props>) => {
-  const [currentFontSize, setCurrentFontSize] = useState<string>('18px');
+export const TipTapFontSize = ({ className, editor, defaultFontSize = Pxs.PX_18 }: Readonly<Props>) => {
+  const [currentFontSize, setCurrentFontSize] = useState<string>(defaultFontSize);
+
+  useEffect(() => {
+    if (!editor || editor.isEmpty) {
+      setCurrentFontSize(defaultFontSize);
+    }
+  }, [defaultFontSize, editor]);
 
   const getCurrentFontSize = useCallback(() => {
-    if (!editor) return '18px';
+    if (!editor || editor.isEmpty) return defaultFontSize;
 
     const fontSize = editor.getAttributes('textStyle').fontSize;
+    if (fontSize && Object.values(Pxs).includes(fontSize as Pxs)) return fontSize;
 
-    // fontSize가 있고 Pxs enum에 포함된 값인지 확인
-    if (fontSize && Object.values(Pxs).includes(fontSize as Pxs)) {
-      return fontSize;
-    }
-
-    // 기본값 반환
-    return '18px';
-  }, [editor]);
+    return defaultFontSize;
+  }, [editor, defaultFontSize]);
 
   useEffect(() => {
     if (!editor) return;

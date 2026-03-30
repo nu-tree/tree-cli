@@ -63,15 +63,17 @@ export enum Colors {
   DarkNavy = '#001966',
 }
 
-export const FontOptions: Record<string, string> = {
-  '맑은 고딕': 'Malgun Gothic, sans-serif',
+export const FontOptions = {
+  맑은고딕: 'Malgun Gothic, sans-serif',
   굴림: 'Gulim, sans-serif',
   궁서: 'Gungsuh, serif',
   인터: 'Inter',
-  '코믹 산스': 'Comic Sans',
+  코믹산스: 'Comic Sans',
   세리프: 'Serif',
   모노스페이스: 'Monospace',
-};
+} as const;
+
+export type FontFamilyKey = keyof typeof FontOptions;
 
 export enum Pxs {
   PX_9 = '9px',

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Pxs, FontFamilyKey } from '../plugin/tiptap-font-config/constants';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 import { TipTapFontStyle } from '../menus/font-style';
@@ -31,11 +32,22 @@ import {
 import { YoutubeLink } from '../menus/youtube-link';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+type DefaultEditorOptions = {
+	fontSize?: Pxs;
+	fontFamily?: FontFamilyKey;
+	bold?: boolean;
+	italic?: boolean;
+	underline?: boolean;
+	color?: string;
+	textAlign?: 'left' | 'center' | 'right';
+};
+
 type Props = React.HTMLAttributes<HTMLElement> & {
 	editor: Editor;
 	onImageUpload?: (file: File) => Promise<string>;
 	isFullscreen?: boolean;
 	onToggleFullscreen?: () => void;
+	defaultOptions?: DefaultEditorOptions;
 };
 
 export const Toolbar = ({
@@ -44,6 +56,7 @@ export const Toolbar = ({
 	onImageUpload,
 	isFullscreen,
 	onToggleFullscreen,
+	defaultOptions,
 }: Readonly<Props>) => {
 	const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
 		text: false,
@@ -260,9 +273,9 @@ export const Toolbar = ({
 			{!isCompactMode && (
 				<div className="w-full overflow-x-auto overflow-y-hidden">
 					<div className="flex items-center py-1 px-4 whitespace-nowrap [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded">
-						<TipTapFontStyle editor={editor} />
+						<TipTapFontStyle editor={editor} defaultFontFamily={defaultOptions?.fontFamily} />
 						<Separator />
-						<TipTapFontSize editor={editor} />
+						<TipTapFontSize editor={editor} defaultFontSize={defaultOptions?.fontSize} />
 						<Separator />
 						<TipTapFontColor editor={editor} />
 						<Highlight editor={editor} />
@@ -295,8 +308,8 @@ export const Toolbar = ({
 				<div className="w-full overflow-x-auto overflow-y-hidden p-2">
 					<div className="flex items-center gap-1 whitespace-nowrap [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded">
 						{/* 폰트 스타일 그룹: 항상 표시 */}
-						<TipTapFontStyle editor={editor} />
-						<TipTapFontSize editor={editor} />
+						<TipTapFontStyle editor={editor} defaultFontFamily={defaultOptions?.fontFamily} />
+						<TipTapFontSize editor={editor} defaultFontSize={defaultOptions?.fontSize} />
 						{/* 서식 그룹 - Bold 아이콘 사용 */}
 						<GroupButton groupName="text" icon={BoldIcon} />
 						{/* 정렬 그룹 - TextAlignCenter 아이콘 사용 */}

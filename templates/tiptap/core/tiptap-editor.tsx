@@ -51,10 +51,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useContentStore, useContentStoreSelector } from '@/components/custom-ui/tiptap/plugin';
 import { cn } from '@/lib/utils';
 import { Toolbar } from './toolbar';
-import { ScrollArea } from '../../scroll-area/scroll-area';
 import { TableContextMenu } from '../menus/table-context-menu';
-import { FontOptions } from '../plugin/tiptap-font-config/constants';
+import { FontOptions, FontFamilyKey, Pxs } from '../plugin/tiptap-font-config/constants';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+type DefaultEditorOptions = {
+  fontSize?: Pxs;
+  fontFamily?: FontFamilyKey;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  color?: string;
+  textAlign?: 'left' | 'center' | 'right';
+};
 
 type Props = React.HTMLAttributes<HTMLElement> & {
   keyId: string;
@@ -63,16 +72,17 @@ type Props = React.HTMLAttributes<HTMLElement> & {
   onImageUpload?: (file: File) => Promise<string>;
   onChange?: (content: string) => void;
   content?: string;
+  defaultOptions?: DefaultEditorOptions;
 };
 
 export const TiptapEditor = ({
   className,
   keyId,
   height = 400,
-  width = '100%',
   content: initialContentProp,
   onImageUpload,
   onChange,
+  defaultOptions,
 }: Props) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { getContent, setContent } = useContentStore();
@@ -123,11 +133,18 @@ export const TiptapEditor = ({
     // EditorContent 리렌더링 최적화
     shouldRerenderOnTransaction: false,
     onCreate: ({ editor }) => {
-      // 에디터 생성 시 기본 폰트 크기와 폰트 설정
-      if (!initialContent) {
-        editor.chain().selectAll().setFontSize('18px').setFontFamily(FontOptions['맑은 고딕']).run();
+      // 에디터 생성 시 기본값 설정
+      if (editor.isEmpty) {
+        const fontSize = defaultOptions?.fontSize ?? '18px';
+        const fontFamily = FontOptions[defaultOptions?.fontFamily ?? '맑은고딕'];
+        let chain = editor.chain().focus().setFontSize(fontSize).setFontFamily(fontFamily);
+        if (defaultOptions?.bold) chain = chain.setBold();
+        if (defaultOptions?.italic) chain = chain.setItalic();
+        if (defaultOptions?.underline) chain = chain.setUnderline();
+        if (defaultOptions?.color) chain = chain.setColor(defaultOptions.color);
+        if (defaultOptions?.textAlign) chain = chain.setTextAlign(defaultOptions.textAlign);
+        chain.blur().run();
       }
-      editor.commands.blur();
     },
     onUpdate: ({ editor }) => {
       const content = editor.getHTML();
@@ -158,7 +175,6 @@ export const TiptapEditor = ({
   const resolvedHeight = typeof height === 'number' && height > 0 ? height : 400;
   const responsiveHeight = isMobile ? Math.min(resolvedHeight, 500) : resolvedHeight;
 
-
   const editorContentStyle = isMobile
     ? { minHeight: `${responsiveHeight}px`, maxHeight: `${resolvedHeight}px` }
     : { height: `${resolvedHeight}px` };
@@ -177,7 +193,9 @@ export const TiptapEditor = ({
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    const hasFiles = Array.from(e.dataTransfer.items).some((item) => item.kind === 'file' && item.type.startsWith('image/'));
+    const hasFiles = Array.from(e.dataTransfer.items).some(
+      (item) => item.kind === 'file' && item.type.startsWith('image/'),
+    );
     if (!hasFiles) return;
     e.preventDefault();
     setIsDraggingOver(true);
@@ -216,10 +234,6 @@ export const TiptapEditor = ({
 
   if (!editor) return null;
 
-  const fullscreenContentStyle = isFullscreen
-    ? { flex: 1, minHeight: 0 }
-    : editorContentStyle;
-
   const editorContent = (
     <div
       onClick={handleEditorAreaClick}
@@ -256,6 +270,7 @@ export const TiptapEditor = ({
               onImageUpload={onImageUpload}
               isFullscreen={isFullscreen}
               onToggleFullscreen={() => setIsFullscreen(false)}
+              defaultOptions={defaultOptions}
             />
           </div>
           {editorContent}
@@ -277,6 +292,7 @@ export const TiptapEditor = ({
             onImageUpload={onImageUpload}
             isFullscreen={isFullscreen}
             onToggleFullscreen={() => setIsFullscreen(true)}
+            defaultOptions={defaultOptions}
           />
         </div>
         {!isFullscreen && editorContent}

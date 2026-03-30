@@ -1,5 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/custom-ui/select/select';
-import { FontOptions } from '../plugin/tiptap-font-config/constants';
+import { FontOptions, FontFamilyKey } from '../plugin/tiptap-font-config/constants';
 import { cn } from '@/lib/utils';
 import { CaseSensitive } from 'lucide-react';
 import { IconButtonWrapper } from './common/icon-button-wrapper';
@@ -9,34 +9,40 @@ import { useCallback, useEffect, useState } from 'react';
 
 type Props = React.HTMLAttributes<HTMLElement> & {
   editor: Editor;
+  defaultFontFamily?: FontFamilyKey;
 };
 
-export const TipTapFontStyle = ({ className, editor }: Readonly<Props>) => {
-  const [currentFont, setCurrentFont] = useState<string>('맑은 고딕');
+export const TipTapFontStyle = ({ className, editor, defaultFontFamily }: Readonly<Props>) => {
+  const defaultFontKey: FontFamilyKey = defaultFontFamily ?? '맑은고딕';
+
+  const [currentFont, setCurrentFont] = useState<string>(defaultFontKey);
+
+  // defaultFontKey 바뀌거나 editor 비어있을 때 동기화
+  useEffect(() => {
+    if (!editor || editor.isEmpty) {
+      setCurrentFont(defaultFontKey);
+    }
+  }, [defaultFontKey, editor]);
+
+  const findFontKey = useCallback((fontFamily: string): string => {
+    const key = (Object.keys(FontOptions) as FontFamilyKey[]).find((k) => {
+      const val = FontOptions[k];
+      if (val === fontFamily) return true;
+      const first = val.split(',')[0].trim().replace(/['"]/g, '');
+      const current = fontFamily.split(',')[0].trim().replace(/['"]/g, '');
+      return first === current;
+    });
+    return key ?? defaultFontKey;
+  }, [defaultFontKey]);
 
   const getCurrentFont = useCallback(() => {
-    if (!editor) return '맑은 고딕';
+    if (!editor || editor.isEmpty) return defaultFontKey;
 
     const fontFamily = editor.getAttributes('textStyle').fontFamily;
+    if (fontFamily) return findFontKey(fontFamily);
 
-    if (!fontFamily) return '맑은 고딕';
-
-    // FontOptions에서 현재 fontFamily와 일치하는 키를 찾기
-    const fontKey = Object.keys(FontOptions).find((key) => {
-      const optionValue = FontOptions[key];
-
-      // 정확히 일치하는 경우
-      if (optionValue === fontFamily) return true;
-
-      // 첫 번째 폰트명만 비교 (예: "Malgun Gothic, sans-serif"에서 "Malgun Gothic"만)
-      const firstFont = optionValue.split(',')[0].trim().replace(/['"]/g, '');
-      const currentFirstFont = fontFamily.split(',')[0].trim().replace(/['"]/g, '');
-
-      return firstFont === currentFirstFont;
-    });
-
-    return fontKey || '맑은 고딕';
-  }, [editor]);
+    return defaultFontKey;
+  }, [editor, defaultFontKey, findFontKey]);
 
   useEffect(() => {
     if (!editor) return;
