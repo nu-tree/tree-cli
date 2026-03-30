@@ -35,6 +35,9 @@
 		"tiptap-extension-resize-image",
 		"zustand"
 	],
+	"hooks": [
+		"use-mobile"
+	],
 	"components": [
 		"select",
 		"dialog",
